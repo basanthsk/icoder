@@ -44,7 +44,7 @@ const modelCategories: ModelCategory[] = [
       },
       {
         id: "gpt-4.1",
-        name: "gpt-4.1",s
+        name: "gpt-4.1",
         description: "coding capabilities for problem extraction"
       },
       {
