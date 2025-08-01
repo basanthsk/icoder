@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, shell, ipcMain } from "electron"
+import { app, BrowserWindow, screen, shell, ipcMain, globalShortcut } from "electron"
 import path from "path"
 import fs from "fs"
 import { initializeIpcHandlers } from "./ipcHandlers"
@@ -8,6 +8,9 @@ import { ShortcutsHelper } from "./shortcuts"
 import { initAutoUpdater } from "./autoUpdater"
 import { configHelper } from "./ConfigHelper"
 import * as dotenv from "dotenv"
+
+// Handle SSL certificate issues - set environment variable for Node.js
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 // Constants
 const isDev = process.env.NODE_ENV === "development"
@@ -712,3 +715,48 @@ export {
 }
 
 app.whenReady().then(initializeApp)
+
+// Add proper cleanup handlers
+app.on("before-quit", () => {
+  console.log("App is about to quit - cleaning up...")
+  
+  // Unregister all global shortcuts
+  if (state.shortcutsHelper) {
+    try {
+      globalShortcut.unregisterAll()
+    } catch (error) {
+      console.error("Error unregistering shortcuts:", error)
+    }
+  }
+  
+  // Clean up screenshot helper
+  if (state.screenshotHelper) {
+    try {
+      state.screenshotHelper = null
+    } catch (error) {
+      console.error("Error cleaning up screenshot helper:", error)
+    }
+  }
+  
+  // Close main window properly
+  if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+    try {
+      state.mainWindow.removeAllListeners()
+      state.mainWindow = null
+    } catch (error) {
+      console.error("Error cleaning up main window:", error)
+    }
+  }
+})
+
+app.on("will-quit", (event) => {
+  console.log("App will quit - final cleanup...")
+  
+  // In development mode, ensure we exit completely
+  if (isDev) {
+    setTimeout(() => {
+      console.log("Force exiting in development mode...")
+      process.exit(0)
+    }, 500)
+  }
+})

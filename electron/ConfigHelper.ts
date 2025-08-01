@@ -1,6 +1,7 @@
 // ConfigHelper.ts
 import fs from "node:fs"
 import path from "node:path"
+import https from "node:https"
 import { app } from "electron"
 import { EventEmitter } from "events"
 import { OpenAI } from "openai"
@@ -321,7 +322,13 @@ export class ConfigHelper extends EventEmitter {
    */
   private async testOpenAIKey(apiKey: string): Promise<{valid: boolean, error?: string}> {
     try {
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ 
+        apiKey,
+        // Add SSL configuration to handle certificate issues
+        httpAgent: new https.Agent({
+          rejectUnauthorized: false
+        })
+      });
       // Make a simple API call to test the key
       await openai.models.list();
       return { valid: true };

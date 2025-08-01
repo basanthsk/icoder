@@ -108,7 +108,26 @@ export class ShortcutsHelper {
 
     globalShortcut.register("CommandOrControl+Q", () => {
       console.log("Command/Ctrl + Q pressed. Quitting application.")
+      
+      // Unregister all global shortcuts first
+      globalShortcut.unregisterAll()
+      
+      // Get main window and close it properly
+      const mainWindow = this.deps.getMainWindow()
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.removeAllListeners()
+        mainWindow.close()
+      }
+      
+      // Force quit the app
       app.quit()
+      
+      // In development mode, also kill the process if quit doesn't work
+      if (process.env.NODE_ENV === "development") {
+        setTimeout(() => {
+          process.exit(0)
+        }, 1000)
+      }
     })
 
     // Adjust opacity shortcuts

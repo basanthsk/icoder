@@ -1,6 +1,7 @@
 // ProcessingHelper.ts
 import fs from "node:fs"
 import path from "node:path"
+import https from "node:https"
 import { ScreenshotHelper } from "./ScreenshotHelper"
 import { IProcessingHelperDeps } from "./main"
 import * as axios from "axios"
@@ -79,7 +80,11 @@ export class ProcessingHelper {
           this.openaiClient = new OpenAI({ 
             apiKey: config.apiKey,
             timeout: 60000, // 60 second timeout
-            maxRetries: 2   // Retry up to 2 times
+            maxRetries: 2,   // Retry up to 2 times
+            // Add SSL configuration to handle certificate issues
+            httpAgent: new https.Agent({
+              rejectUnauthorized: false
+            })
           });
           this.geminiApiKey = null;
           this.anthropicClient = null;
@@ -752,6 +757,8 @@ ${problemInfo.example_output || "No example output provided."}
 LANGUAGE: ${language}
 
 I need the response in the following format:
+1. write plan to solve step by step in terms of psudocode
+2. Explain why it is a good approach and what can be alternate bad approach
 1. Code: A clean, optimized implementation in ${language}
 2. Your Thoughts: A list of key insights and reasoning behind your approach
 3. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
