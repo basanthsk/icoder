@@ -43,6 +43,21 @@ const modelCategories: ModelCategory[] = [
         description: "Best overall performance for problem extraction"
       },
       {
+        id: "gpt-4.1",
+        name: "gpt-4.1",s
+        description: "coding capabilities for problem extraction"
+      },
+      {
+        id: "gpt-4o-audio-preview-2025-06-03",
+        name: "gpt-4o-audio-preview-2025-06-03",
+        description: "Audio processing capabilities for problem extraction"
+      },
+      {
+        id: "chatgpt",
+        name: "chatgpt-4o-latest",
+        description: "model used in the chatgpt web app, optimized for speed and cost"
+      },
+      {
         id: "gpt-4o-mini",
         name: "gpt-4o-mini",
         description: "Faster, more cost-effective option"
@@ -89,6 +104,21 @@ const modelCategories: ModelCategory[] = [
         description: "Strong overall performance for coding tasks"
       },
       {
+        id: "gpt-4o-audio-preview-2025-06-03",
+        name: "gpt-4o-audio-preview-2025-06-03",
+        description: "Audio processing capabilities for coding tasks"
+      },
+      {
+        id: "chatgpt",
+        name: "chatgpt-4o-latest",
+        description: "model used in the chatgpt web app, optimized for speed and cost"
+      },
+      {
+        id: "gpt-4.1",
+        name: "gpt-4.1",
+        description: "Enhanced capabilities for complex coding tasks"
+      },
+      {
         id: "gpt-4o-mini",
         name: "gpt-4o-mini",
         description: "Faster, more cost-effective option"
@@ -133,6 +163,21 @@ const modelCategories: ModelCategory[] = [
         id: "gpt-4o",
         name: "gpt-4o",
         description: "Best for analyzing code and error messages"
+      },
+      {
+        id : "gpt-4o-audio-preview-2025-06-03",
+        name: "gpt-4o-audio-preview-2025-06-03",
+        description: "Audio processing capabilities for debugging tasks"
+      },
+      {
+        id: "chatgpt",
+        name: "chatgpt-4o-latest",
+        description: "model used in the chatgpt web app, optimized for speed and cost"
+      },
+      {
+        id: "gpt-4.1",
+        name: "gpt-4.1",
+        description: "Enhanced capabilities for debugging tasks"
       },
       {
         id: "gpt-4o-mini",

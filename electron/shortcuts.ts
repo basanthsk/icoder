@@ -35,10 +35,31 @@ export class ShortcutsHelper {
   }
 
   public registerGlobalShortcuts(): void {
-    globalShortcut.register("CommandOrControl+H", async () => {
+    console.log("🎮 Registering global shortcuts...")
+    
+    // Primary screenshot shortcut
+    globalShortcut.register("CommandOrControl+F2", async () => {
       const mainWindow = this.deps.getMainWindow()
       if (mainWindow) {
-        console.log("Taking screenshot...")
+        console.log("Command/Ctrl + F2 pressed. Taking screenshot...")
+        try {
+          const screenshotPath = await this.deps.takeScreenshot()
+          const preview = await this.deps.getImagePreview(screenshotPath)
+          mainWindow.webContents.send("screenshot-taken", {
+            path: screenshotPath,
+            preview
+          })
+        } catch (error) {
+          console.error("Error capturing screenshot:", error)
+        }
+      }
+    })
+
+    // Alternative screenshot shortcut
+    globalShortcut.register("F12", async () => {
+      const mainWindow = this.deps.getMainWindow()
+      if (mainWindow) {
+        console.log("F12 pressed. Taking screenshot...")
         try {
           const screenshotPath = await this.deps.takeScreenshot()
           const preview = await this.deps.getImagePreview(screenshotPath)
@@ -53,12 +74,13 @@ export class ShortcutsHelper {
     })
 
     globalShortcut.register("CommandOrControl+Enter", async () => {
+      console.log("Command/Ctrl + Enter pressed. Processing screenshots...")
       await this.deps.processingHelper?.processScreenshots()
     })
 
     globalShortcut.register("CommandOrControl+R", () => {
       console.log(
-        "Command + R pressed. Canceling requests and resetting queues..."
+        "Command/Ctrl + R pressed. Canceling requests and resetting queues..."
       )
 
       // Cancel ongoing API requests
@@ -178,8 +200,20 @@ export class ShortcutsHelper {
       }
     })
     
+    console.log("✅ Global shortcuts registered successfully!")
+    console.log("📋 Available shortcuts:")
+    console.log("   Ctrl+F2 / F12: Take screenshot")
+    console.log("   Ctrl+Enter: Process screenshots")
+    console.log("   Ctrl+R: Reset queues")
+    console.log("   Ctrl+B: Toggle window")
+    console.log("   Ctrl+Q: Quit app")
+    console.log("   Ctrl+[/]: Adjust opacity")
+    console.log("   Ctrl+Arrow: Move window")
+    console.log("   Ctrl+L: Delete last screenshot")
+    
     // Unregister shortcuts when quitting
     app.on("will-quit", () => {
+      console.log("🎮 Unregistering all global shortcuts...")
       globalShortcut.unregisterAll()
     })
   }

@@ -452,6 +452,13 @@ export class ProcessingHelper {
       const language = await this.getLanguage();
       const mainWindow = this.deps.getMainWindow();
       
+      // 🤖 Log AI configuration for problem extraction
+      console.log("🔬 PROBLEM EXTRACTION - AI Configuration:");
+      console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+      console.log(`   Model: ${config.extractionModel}`);
+      console.log(`   Language: ${language}`);
+      console.log(`   Screenshots: ${screenshots.length} images`);
+      
       // Step 1: Extract problem info using AI Vision API (OpenAI or Gemini)
       const imageDataList = screenshots.map(screenshot => screenshot.data);
       
@@ -466,6 +473,7 @@ export class ProcessingHelper {
       let problemInfo;
       
       if (config.apiProvider === "openai") {
+        console.log(`🔍 Starting problem extraction with OpenAI model: ${config.extractionModel }`);
         // Verify OpenAI client
         if (!this.openaiClient) {
           this.initializeAIClient(); // Try to reinitialize
@@ -482,14 +490,14 @@ export class ProcessingHelper {
         const messages = [
           {
             role: "system" as const, 
-            content: "You are a coding challenge interpreter. Analyze the screenshot of the coding problem and extract all relevant information. Return the information in JSON format with these fields: problem_statement, constraints, example_input, example_output. Just return the structured JSON without any other text."
+            content: "You are a coding challenge interpreter or a ai/ml question answer generator. Analyze the screenshot of the coding problem or question and extract all relevant information. Return the information in JSON format with these fields: problem_statement, constraints, example_input, example_output or answer to the question. Just return the structured JSON without any other text."
           },
           {
             role: "user" as const,
             content: [
               {
                 type: "text" as const, 
-                text: `Extract the coding problem details from these screenshots. Return in JSON format. Preferred coding language we gonna use for this problem is ${language}.`
+                text: `Extract the coding problem details or questions from these screenshots. Return in JSON format. Preferred coding language we gonna use for this problem is ${language}.`
               },
               ...imageDataList.map(data => ({
                 type: "image_url" as const,
@@ -501,7 +509,7 @@ export class ProcessingHelper {
 
         // Send to OpenAI Vision API
         const extractionResponse = await this.openaiClient.chat.completions.create({
-          model: config.extractionModel || "gpt-4o",
+          model: config.extractionModel ,
           messages: messages,
           max_tokens: 4000,
           temperature: 0.2
@@ -521,6 +529,7 @@ export class ProcessingHelper {
           };
         }
       } else if (config.apiProvider === "gemini")  {
+        console.log(`🔍 Starting problem extraction with Gemini model: ${config.extractionModel || "gemini-2.0-flash"}`);
         // Use Gemini API
         if (!this.geminiApiKey) {
           return {
@@ -580,6 +589,7 @@ export class ProcessingHelper {
           };
         }
       } else if (config.apiProvider === "anthropic") {
+        console.log(`🔍 Starting problem extraction with Anthropic model: ${config.extractionModel || "claude-3-7-sonnet-20250219"}`);
         if (!this.anthropicClient) {
           return {
             success: false,
@@ -651,6 +661,12 @@ export class ProcessingHelper {
 
       // Store problem info in AppState
       this.deps.setProblemInfo(problemInfo);
+      
+      // ✅ Log successful problem extraction
+      console.log(`✅ Problem extraction completed successfully!`);
+      console.log(`   Problem: ${problemInfo.problem_statement?.slice(0, 80)}...`);
+      console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+      console.log(`   Model: ${config.extractionModel}`);
 
       // Send first success event
       if (mainWindow) {
@@ -670,6 +686,12 @@ export class ProcessingHelper {
             message: "Solution generated successfully",
             progress: 100
           });
+          
+          // ✅ Log successful solution generation
+          console.log(`✅ Solution generation completed successfully!`);
+          console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+          console.log(`   Model: ${config.solutionModel}`);
+          console.log(`   Solution length: ${solutionsResult.data?.code?.length || 0} characters`);
           
           mainWindow.webContents.send(
             this.deps.PROCESSING_EVENTS.SOLUTION_SUCCESS,
@@ -738,9 +760,16 @@ export class ProcessingHelper {
         });
       }
 
+      // 💡 Log AI configuration for solution generation
+      console.log("💡 SOLUTION GENERATION - AI Configuration:");
+      console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+      console.log(`   Model: ${config.solutionModel}`);
+      console.log(`   Language: ${language}`);
+      console.log(`   Problem: ${problemInfo.problem_statement?.slice(0, 100)}...`);
+
       // Create prompt for solution generation
       const promptText = `
-Generate a detailed solution for the following coding problem:
+Generate a detailed solution for the following coding problem or questions:
 
 PROBLEM STATEMENT:
 ${problemInfo.problem_statement}
@@ -757,8 +786,8 @@ ${problemInfo.example_output || "No example output provided."}
 LANGUAGE: ${language}
 
 I need the response in the following format:
-1. write plan to solve step by step in terms of psudocode
-2. Explain why it is a good approach and what can be alternate bad approach
+1. write a step by step plan to solve the problem
+2. Explain the reason behind approach and what other alternate approach can be used
 1. Code: A clean, optimized implementation in ${language}
 2. Your Thoughts: A list of key insights and reasoning behind your approach
 3. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
@@ -772,6 +801,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
       let responseContent;
       
       if (config.apiProvider === "openai") {
+        console.log(`💡 Generating solution with OpenAI model: ${config.solutionModel || "gpt-4o"}`);
         // OpenAI processing
         if (!this.openaiClient) {
           return {
@@ -782,7 +812,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
         
         // Send to OpenAI API
         const solutionResponse = await this.openaiClient.chat.completions.create({
-          model: config.solutionModel || "gpt-4o",
+          model: config.solutionModel ,
           messages: [
             { role: "system", content: "You are an expert coding interview assistant. Provide clear, optimal solutions with detailed explanations." },
             { role: "user", content: promptText }
@@ -793,6 +823,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
 
         responseContent = solutionResponse.choices[0].message.content;
       } else if (config.apiProvider === "gemini")  {
+        console.log(`💡 Generating solution with Gemini model: ${config.solutionModel || "gemini-2.0-flash"}`);
         // Gemini processing
         if (!this.geminiApiKey) {
           return {
@@ -842,6 +873,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
           };
         }
       } else if (config.apiProvider === "anthropic") {
+        console.log(`💡 Generating solution with Anthropic model: ${config.solutionModel || "claude-3-7-sonnet-20250219"}`);
         // Anthropic processing
         if (!this.anthropicClient) {
           return {
@@ -999,6 +1031,13 @@ Your solution should be efficient, well-commented, and handle edge cases.
       const config = configHelper.loadConfig();
       const mainWindow = this.deps.getMainWindow();
 
+      // 🐛 Log AI configuration for debugging
+      console.log("🐛 DEBUGGING ANALYSIS - AI Configuration:");
+      console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+      console.log(`   Model: ${config.debuggingModel}`);
+      console.log(`   Language: ${language}`);
+      console.log(`   Debug Screenshots: ${screenshots.length} images`);
+
       if (!problemInfo) {
         throw new Error("No problem info available");
       }
@@ -1017,6 +1056,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
       let debugContent;
       
       if (config.apiProvider === "openai") {
+        console.log(`🐛 Analyzing debug screenshots with OpenAI model: ${config.debuggingModel || "gpt-4o"}`);
         if (!this.openaiClient) {
           return {
             success: false,
@@ -1074,7 +1114,7 @@ If you include code examples, use proper markdown code blocks with language spec
         }
 
         const debugResponse = await this.openaiClient.chat.completions.create({
-          model: config.debuggingModel || "gpt-4o",
+          model: config.debuggingModel ,
           messages: messages,
           max_tokens: 4000,
           temperature: 0.2
@@ -1082,6 +1122,7 @@ If you include code examples, use proper markdown code blocks with language spec
         
         debugContent = debugResponse.choices[0].message.content;
       } else if (config.apiProvider === "gemini")  {
+        console.log(`🐛 Analyzing debug screenshots with Gemini model: ${config.debuggingModel || "gemini-2.0-flash"}`);
         if (!this.geminiApiKey) {
           return {
             success: false,
@@ -1163,6 +1204,7 @@ If you include code examples, use proper markdown code blocks with language spec
           };
         }
       } else if (config.apiProvider === "anthropic") {
+        console.log(`🐛 Analyzing debug screenshots with Anthropic model: ${config.debuggingModel || "claude-3-7-sonnet-20250219"}`);
         if (!this.anthropicClient) {
           return {
             success: false,
@@ -1289,6 +1331,13 @@ If you include code examples, use proper markdown code blocks with language spec
         time_complexity: "N/A - Debug mode",
         space_complexity: "N/A - Debug mode"
       };
+
+      // ✅ Log successful debugging analysis
+      console.log(`✅ Debugging analysis completed successfully!`);
+      console.log(`   Provider: ${config.apiProvider.toUpperCase()}`);
+      console.log(`   Model: ${config.debuggingModel}`);
+      console.log(`   Analysis length: ${debugContent?.length || 0} characters`);
+      console.log(`   Screenshots analyzed: ${screenshots.length}`);
 
       return { success: true, data: response };
     } catch (error: any) {

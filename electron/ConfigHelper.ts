@@ -62,7 +62,7 @@ export class ConfigHelper extends EventEmitter {
   private sanitizeModelSelection(model: string, provider: "openai" | "gemini" | "anthropic"): string {
     if (provider === "openai") {
       // Only allow gpt-4o and gpt-4o-mini for OpenAI
-      const allowedModels = ['gpt-4o', 'gpt-4o-mini'];
+      const allowedModels = ['gpt-4o', 'gpt-4o-mini', 'chatgpt-4o-latest','gpt-4.1','gpt-4o-audio-preview-2025-06-03'];
       if (!allowedModels.includes(model)) {
         console.warn(`Invalid OpenAI model specified: ${model}. Using default model: gpt-4o`);
         return 'gpt-4o';
