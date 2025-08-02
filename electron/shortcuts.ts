@@ -73,6 +73,55 @@ export class ShortcutsHelper {
       }
     })
 
+    // Ctrl+H screenshot shortcut (alternative to F12 and Ctrl+F2)
+    const ctrlHRegistered = globalShortcut.register("CommandOrControl+H", async () => {
+      const mainWindow = this.deps.getMainWindow()
+      if (mainWindow) {
+        console.log("🔥 Command/Ctrl + H pressed. Taking screenshot...")
+        try {
+          const screenshotPath = await this.deps.takeScreenshot()
+          const preview = await this.deps.getImagePreview(screenshotPath)
+          mainWindow.webContents.send("screenshot-taken", {
+            path: screenshotPath,
+            preview
+          })
+        } catch (error) {
+          console.error("Error capturing screenshot:", error)
+        }
+      }
+    })
+    
+    if (ctrlHRegistered) {
+      console.log("✅ Ctrl+H screenshot shortcut registered successfully")
+    } else {
+      console.error("❌ Failed to register Ctrl+H shortcut - might be already in use by another app")
+      console.log("💡 Trying alternative: Ctrl+Shift+H...")
+      
+      // Try Ctrl+Shift+H as alternative
+      const ctrlShiftHRegistered = globalShortcut.register("CommandOrControl+Shift+H", async () => {
+        const mainWindow = this.deps.getMainWindow()
+        if (mainWindow) {
+          console.log("🔥 Command/Ctrl + Shift + H pressed. Taking screenshot...")
+          try {
+            const screenshotPath = await this.deps.takeScreenshot()
+            const preview = await this.deps.getImagePreview(screenshotPath)
+            mainWindow.webContents.send("screenshot-taken", {
+              path: screenshotPath,
+              preview
+            })
+          } catch (error) {
+            console.error("Error capturing screenshot:", error)
+          }
+        }
+      })
+      
+      if (ctrlShiftHRegistered) {
+        console.log("✅ Ctrl+Shift+H screenshot shortcut registered as alternative")
+      } else {
+        console.error("❌ Failed to register Ctrl+Shift+H shortcut as well")
+      }
+    }
+
     globalShortcut.register("CommandOrControl+Enter", async () => {
       console.log("Command/Ctrl + Enter pressed. Processing screenshots...")
       await this.deps.processingHelper?.processScreenshots()
@@ -202,7 +251,7 @@ export class ShortcutsHelper {
     
     console.log("✅ Global shortcuts registered successfully!")
     console.log("📋 Available shortcuts:")
-    console.log("   Ctrl+F2 / F12: Take screenshot")
+    console.log("   Ctrl+F2 / F12 / Ctrl+H: Take screenshot")
     console.log("   Ctrl+Enter: Process screenshots")
     console.log("   Ctrl+R: Reset queues")
     console.log("   Ctrl+B: Toggle window")

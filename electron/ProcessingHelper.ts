@@ -449,7 +449,7 @@ export class ProcessingHelper {
   ) {
     try {
       const config = configHelper.loadConfig();
-      const language = await this.getLanguage();
+      let language = await this.getLanguage(); // Changed from const to let
       const mainWindow = this.deps.getMainWindow();
       
       // 🤖 Log AI configuration for problem extraction
@@ -490,14 +490,23 @@ export class ProcessingHelper {
         const messages = [
           {
             role: "system" as const, 
-            content: "You are a coding challenge interpreter or a ai/ml question answer generator. Analyze the screenshot of the coding problem or question and extract all relevant information. Return the information in JSON format with these fields: problem_statement, constraints, example_input, example_output or answer to the question. Just return the structured JSON without any other text."
+            content: "You are a coding challenge interpreter and question answering system. Analyze screenshots of coding problems, technical questions, or any educational content. Extract all relevant information and DETECT the programming language from the screenshot itself. Return information in JSON format with these fields: problem_statement, constraints, example_input, example_output, detected_language. For detected_language: identify the specific programming language mentioned or shown in the screenshot (e.g., 'javascript', 'sql', 'python', 'java', 'c++', etc.). If it's a general question without code, use 'general'. If no language is clearly specified, use 'python' as default. Return ONLY the structured JSON without any other text."
           },
           {
             role: "user" as const,
             content: [
               {
                 type: "text" as const, 
-                text: `Extract the coding problem details or questions from these screenshots. Return in JSON format. Preferred coding language we gonna use for this problem is ${language}.`
+                text: `Analyze these screenshots and extract the problem details or question information. IMPORTANT: 
+1. Detect the programming language from the screenshot itself (look for language indicators, code syntax, file extensions, IDE settings, problem requirements, etc.)
+2. If it's SQL, use 'sql' for detected_language
+3. If it's JavaScript/JS, use 'javascript' for detected_language  
+4. If it's Java, use 'java' for detected_language
+5. If it's C++/CPP, use 'cpp' for detected_language
+6. If it's a general question without code, use 'general' for detected_language
+7. If no language is clearly specified in the screenshot, use 'python' as default
+8. Return in JSON format with detected_language field
+9. User preference language is ${language}, but prioritize what you see in the screenshot over user preference.`
               },
               ...imageDataList.map(data => ({
                 type: "image_url" as const,
@@ -521,6 +530,15 @@ export class ProcessingHelper {
           // Handle when OpenAI might wrap the JSON in markdown code blocks
           const jsonText = responseText.replace(/```json|```/g, '').trim();
           problemInfo = JSON.parse(jsonText);
+          
+          // Use detected language from AI response if available, otherwise fallback to user preference
+          if (problemInfo.detected_language) {
+            console.log(`🔍 Language detected from screenshot: ${problemInfo.detected_language}`);
+            // Override the language variable with detected language
+            language = problemInfo.detected_language;
+          } else {
+            console.log(`⚠️ No language detected, using user preference: ${language}`);
+          }
         } catch (error) {
           console.error("Error parsing OpenAI response:", error);
           return {
@@ -545,7 +563,21 @@ export class ProcessingHelper {
               role: "user",
               parts: [
                 {
-                  text: `You are a coding challenge interpreter. Analyze the screenshots of the coding problem and extract all relevant information. Return the information in JSON format with these fields: problem_statement, constraints, example_input, example_output. Just return the structured JSON without any other text. Preferred coding language we gonna use for this problem is ${language}.`
+                  text: `You are a coding challenge interpreter and question answering system. Analyze screenshots of coding problems, technical questions, or any educational content. Extract all relevant information and DETECT the programming language from the screenshot itself. Return information in JSON format with these fields: problem_statement, constraints, example_input, example_output, detected_language. 
+
+For detected_language: identify the specific programming language mentioned or shown in the screenshot (e.g., 'javascript', 'sql', 'python', 'java', 'c++', etc.). If it's a general question without code, use 'general'. If no language is clearly specified, use 'python' as default.
+
+IMPORTANT: 
+1. Detect the programming language from the screenshot itself (look for language indicators, code syntax, file extensions, IDE settings, problem requirements, etc.)
+2. If it's SQL, use 'sql' for detected_language
+3. If it's JavaScript/JS, use 'javascript' for detected_language  
+4. If it's Java, use 'java' for detected_language
+5. If it's C++/CPP, use 'cpp' for detected_language
+6. If it's a general question without code, use 'general' for detected_language
+7. If no language is clearly specified in the screenshot, use 'python' as default
+8. User preference language is ${language}, but prioritize what you see in the screenshot over user preference.
+
+Return ONLY the structured JSON without any other text.`
                 },
                 ...imageDataList.map(data => ({
                   inlineData: {
@@ -581,6 +613,15 @@ export class ProcessingHelper {
           // Handle when Gemini might wrap the JSON in markdown code blocks
           const jsonText = responseText.replace(/```json|```/g, '').trim();
           problemInfo = JSON.parse(jsonText);
+          
+          // Use detected language from AI response if available, otherwise fallback to user preference
+          if (problemInfo.detected_language) {
+            console.log(`🔍 Language detected from screenshot (Gemini): ${problemInfo.detected_language}`);
+            // Override the language variable with detected language
+            language = problemInfo.detected_language;
+          } else {
+            console.log(`⚠️ No language detected by Gemini, using user preference: ${language}`);
+          }
         } catch (error) {
           console.error("Error using Gemini API:", error);
           return {
@@ -604,7 +645,21 @@ export class ProcessingHelper {
               content: [
                 {
                   type: "text" as const,
-                  text: `Extract the coding problem details from these screenshots. Return in JSON format with these fields: problem_statement, constraints, example_input, example_output. Preferred coding language is ${language}.`
+                  text: `You are a coding challenge interpreter and question answering system. Analyze screenshots of coding problems, technical questions, or any educational content. Extract all relevant information and DETECT the programming language from the screenshot itself. Return information in JSON format with these fields: problem_statement, constraints, example_input, example_output, detected_language.
+
+For detected_language: identify the specific programming language mentioned or shown in the screenshot (e.g., 'javascript', 'sql', 'python', 'java', 'c++', etc.). If it's a general question without code, use 'general'. If no language is clearly specified, use 'python' as default.
+
+IMPORTANT: 
+1. Detect the programming language from the screenshot itself (look for language indicators, code syntax, file extensions, IDE settings, problem requirements, etc.)
+2. If it's SQL, use 'sql' for detected_language
+3. If it's JavaScript/JS, use 'javascript' for detected_language  
+4. If it's Java, use 'java' for detected_language
+5. If it's C++/CPP, use 'cpp' for detected_language
+6. If it's a general question without code, use 'general' for detected_language
+7. If no language is clearly specified in the screenshot, use 'python' as default
+8. User preference language is ${language}, but prioritize what you see in the screenshot over user preference.
+
+Return ONLY the structured JSON without any other text.`
                 },
                 ...imageDataList.map(data => ({
                   type: "image" as const,
@@ -628,6 +683,15 @@ export class ProcessingHelper {
           const responseText = (response.content[0] as { type: 'text', text: string }).text;
           const jsonText = responseText.replace(/```json|```/g, '').trim();
           problemInfo = JSON.parse(jsonText);
+          
+          // Use detected language from AI response if available, otherwise fallback to user preference
+          if (problemInfo.detected_language) {
+            console.log(`🔍 Language detected from screenshot (Anthropic): ${problemInfo.detected_language}`);
+            // Override the language variable with detected language
+            language = problemInfo.detected_language;
+          } else {
+            console.log(`⚠️ No language detected by Anthropic, using user preference: ${language}`);
+          }
         } catch (error: any) {
           console.error("Error using Anthropic API:", error);
 
@@ -744,12 +808,20 @@ export class ProcessingHelper {
   private async generateSolutionsHelper(signal: AbortSignal) {
     try {
       const problemInfo = this.deps.getProblemInfo();
-      const language = await this.getLanguage();
+      let language = await this.getLanguage(); // Changed from const to let
       const config = configHelper.loadConfig();
       const mainWindow = this.deps.getMainWindow();
 
       if (!problemInfo) {
         throw new Error("No problem info available");
+      }
+
+      // Use detected language from problem info if available
+      if (problemInfo.detected_language) {
+        language = problemInfo.detected_language;
+        console.log(`💡 Using detected language for solution: ${language}`);
+      } else {
+        console.log(`💡 Using user preference language for solution: ${language}`);
       }
 
       // Update progress status
@@ -769,7 +841,7 @@ export class ProcessingHelper {
 
       // Create prompt for solution generation
       const promptText = `
-Generate a detailed solution for the following coding problem or questions:
+Generate a detailed solution for the following ${language === 'general' ? 'question' : 'coding problem'}:
 
 PROBLEM STATEMENT:
 ${problemInfo.problem_statement}
@@ -785,17 +857,25 @@ ${problemInfo.example_output || "No example output provided."}
 
 LANGUAGE: ${language}
 
-I need the response in the following format:
-1. write a step by step plan to solve the problem
+${language === 'general' ? 
+  `I need a comprehensive answer with:
+1. Clear explanation of the concept or solution
+2. Step-by-step breakdown if applicable
+3. Key insights and important points
+4. Examples or illustrations if helpful
+5. Summary of main takeaways` :
+  `I need the response in the following format:
+1. Write a step by step plan to solve the problem
 2. Explain the reason behind approach and what other alternate approach can be used
-1. Code: A clean, optimized implementation in ${language}
-2. Your Thoughts: A list of key insights and reasoning behind your approach
-3. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
-4. Space complexity: O(X) with a detailed explanation (at least 2 sentences)
+3. Code: A clean, optimized implementation in ${language}
+4. Your Thoughts: A list of key insights and reasoning behind your approach
+5. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
+6. Space complexity: O(X) with a detailed explanation (at least 2 sentences)
 
 For complexity explanations, please be thorough. For example: "Time complexity: O(n) because we iterate through the array only once. This is optimal as we need to examine each element at least once to find the solution." or "Space complexity: O(n) because in the worst case, we store all elements in the hashmap. The additional space scales linearly with the input size."
 
-Your solution should be efficient, well-commented, and handle edge cases.
+Your solution should be efficient, well-commented, and handle edge cases.`
+}
 `;
 
       let responseContent;
@@ -1027,7 +1107,7 @@ Your solution should be efficient, well-commented, and handle edge cases.
   ) {
     try {
       const problemInfo = this.deps.getProblemInfo();
-      const language = await this.getLanguage();
+      let language = await this.getLanguage(); // Changed from const to let
       const config = configHelper.loadConfig();
       const mainWindow = this.deps.getMainWindow();
 
@@ -1040,6 +1120,14 @@ Your solution should be efficient, well-commented, and handle edge cases.
 
       if (!problemInfo) {
         throw new Error("No problem info available");
+      }
+
+      // Use detected language from problem info if available
+      if (problemInfo.detected_language) {
+        language = problemInfo.detected_language;
+        console.log(`🐛 Using detected language for debugging: ${language}`);
+      } else {
+        console.log(`🐛 Using user preference language for debugging: ${language}`);
       }
 
       // Update progress status
