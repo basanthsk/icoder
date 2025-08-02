@@ -11,13 +11,22 @@ export default defineConfig({
       {
         // main.ts
         entry: "electron/main.ts",
+        onstart(options) {
+          if (options.startup) {
+            options.startup()
+          }
+        },
         vite: {
           build: {
             outDir: "dist-electron",
             sourcemap: true,
             minify: false,
+            lib: {
+              entry: "electron/main.ts",
+              formats: ["cjs"]
+            },
             rollupOptions: {
-              external: ["electron"]
+              external: ["electron", "fs", "path", "crypto", "os", "child_process"]
             }
           }
         }
